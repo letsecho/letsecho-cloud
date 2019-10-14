@@ -24,12 +24,19 @@
 
 /* require("./test.js"); */
 
+const logger = require('parse-server').logger;
+
 Parse.Cloud.beforeSave("Event", (request) => {
 
   var user = request.user;
 
   if (user == null) {
     throw "You need to be authenticated 😏. What are you doing 🌚?";
+  }
+
+  if (!request.object.isNew()) {
+    request.context = { isEditing: true };
+    return
   }
 
   request.object.set("createdBy", user)
@@ -43,6 +50,13 @@ Parse.Cloud.beforeSave("Event", (request) => {
 });
 
 Parse.Cloud.afterSave("Event", (request) => {
+
+  const context = request.context;
+
+  if (context.isEditing === true) {
+    return
+  }
+
   const EventRequest = Parse.Object.extend("EventRequest");
 
   // Create a new instance of that class.

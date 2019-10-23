@@ -67,6 +67,26 @@ Parse.Cloud.afterSave("Event", (request) => {
   });
 });
 
+Parse.Cloud.beforeDelete("Event", (request) => {
+  var EventRequest = Parse.Object.extend("EventRequest");
+
+  var event = request.object;
+
+  var queryEventRequest = new Parse.Query(EventRequest);
+  queryEventRequest.equalTo("event", event);
+
+  queryEventRequest.find()
+  .then(function(eventRequests) {
+    for (var i = 0; i < eventRequests.length; i++) {
+      eventRequests[i].destroy()
+    }
+  })
+  .catch(function(error) {
+    logger.error("beforeDelete Event " + error.code + " : " + error.message);
+  });
+});
+
+
 Parse.Cloud.afterFind("Event", async (request) => {
 
   var events = request.objects;

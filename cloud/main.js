@@ -121,9 +121,8 @@ Parse.Cloud.afterFind("Event", async (request) => {
       }
     }
 
-    event.set("location", null);
-    event.set("coordinate", null);
-
+    event.set("place", null);
+    
     fixedObjects.push(event);
   }
 

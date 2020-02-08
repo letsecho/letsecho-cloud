@@ -1,6 +1,6 @@
 {
   "applinks": {
-    "apps": [],
+    "apps": ["KDY2FY8979.com.letsecho.Lets-Echo"],
     "details": [
       {
         "appID": "KDY2FY8979.com.letsecho.Lets-Echo",
@@ -9,9 +9,9 @@
     ]
    },
    "webcredentials": {
-       "apps": [    "KDY2FY8979.com.letsecho.Lets-Echo" ]
+       "apps": ["KDY2FY8979.com.letsecho.Lets-Echo"]
     },
     "activitycontinuation": {
-      "apps":["KDY2FY8979.com.letsecho.Lets-Echo"]
+       "apps":["KDY2FY8979.com.letsecho.Lets-Echo"]
     }
 }

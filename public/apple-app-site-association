@@ -1,17 +1,17 @@
 {
   "applinks": {
-    "apps": ["KDY2FY8979.com.letsecho.Lets-Echo"],
+    "apps": ["KDY2FY8979.com.letsecho.letsecho.ios"],
     "details": [
       {
-        "appID": "KDY2FY8979.com.letsecho.Lets-Echo",
+        "appID": "KDY2FY8979.com.letsecho.letsecho.ios",
         "paths": [ "/events/*" ]
       }
     ]
    },
    "webcredentials": {
-       "apps": ["KDY2FY8979.com.letsecho.Lets-Echo"]
+       "apps": ["KDY2FY8979.com.letsecho.letsecho.ios"]
     },
     "activitycontinuation": {
-       "apps":["KDY2FY8979.com.letsecho.Lets-Echo"]
+       "apps":["KDY2FY8979.com.letsecho.letsecho.ios"]
     }
 }

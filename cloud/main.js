@@ -17,6 +17,7 @@
 
 const logger = require('parse-server').logger;
 
+// Save
 Parse.Cloud.beforeSave("Event", (request) => {
 
   var user = request.user;
@@ -67,6 +68,45 @@ Parse.Cloud.afterSave("Event", (request) => {
   });
 });
 
+
+Parse.Cloud.beforeSave(Parse.User, async (request) => {
+
+  if (request.object.get("settings") != null) {
+    return;
+  }
+
+  request.context = { isCreatingSettings: true };
+
+  const Settings = Parse.Object.extend("Settings");
+
+  var settings = new Settings();
+
+  await settings.save()
+
+  request.object.set("settings", settings);
+});
+
+Parse.Cloud.afterSave(Parse.User, (request) => {
+  var user = request.object;
+
+  const context = request.context;
+
+  if (context.isCreatingSettings === true) {
+    var settings = request.object.get("settings")
+
+    var acl = new Parse.ACL();
+    acl.setReadAccess(user.id,true);
+    acl.setWriteAccess(user.id, true);
+
+    settings.setACL(acl);
+
+    settings.save()
+  }
+
+});
+
+// Delete
+
 Parse.Cloud.beforeDelete("Event", (request) => {
   var EventRequest = Parse.Object.extend("EventRequest");
 
@@ -86,6 +126,12 @@ Parse.Cloud.beforeDelete("Event", (request) => {
   });
 });
 
+// Find
+
+Parse.Cloud.beforeFind("Event", async (request) => {
+  let query = request.query;
+  query.include("createdBy");
+});
 
 Parse.Cloud.afterFind("Event", async (request) => {
 
@@ -122,9 +168,9 @@ Parse.Cloud.afterFind("Event", async (request) => {
     }
 
     event.set("place", null);
-    
+
     fixedObjects.push(event);
   }
 
   return fixedObjects;
-})
+});

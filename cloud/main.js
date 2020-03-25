@@ -17,6 +17,40 @@
 
 const logger = require('parse-server').logger;
 
+const NotificationType = Object.freeze({
+  eventRequest: { key: "EVENT_REQUEST", message: "EVENT_REQUEST_FORMAT"},
+  eventUpdate: { key: "EVENT_UPDATE", message:  "EVENT_UPDATE_FORMAT"},
+  eventRequestAccepted: { key: "EVENT_REQUEST_ACCEPTED", message:  "EVENT_REQUEST_ACCEPTED_FORMAT"}
+});
+
+function sendNotification(user, relatedUser, relatedEvent, type){
+
+  const Notification = Parse.Object.extend("Notification");
+
+  var notification = new Notification();
+  notification.set("forUser", user);
+  notification.set("relatedUser", relatedUser);
+  notification.set("relatedEvent", relatedEvent);
+  notification.set("type", type.key);
+  notification.set("message", type.message);
+
+  var acl = new Parse.ACL();
+  acl.setReadAccess(user.id, true);
+  acl.setWriteAccess(user.id, true);
+
+  notification.setACL(acl);
+
+  notification.save()
+  .then((eventRequest) => {
+    // Execute any logic that should take place after the object is saved.
+    console.error('New object created with objectId: ' + notification.id);
+  }, (error) => {
+    // Execute any logic that should take place if the save fails.
+    // error is a Parse.Error with an error code and message.
+    console.error('Failed to create new object, with error code: ' + error.message);
+  });
+}
+
 // Save
 Parse.Cloud.beforeSave("Event", (request) => {
 
@@ -68,6 +102,18 @@ Parse.Cloud.afterSave("Event", (request) => {
   });
 });
 
+Parse.Cloud.afterSave("EventRequest", (request) => {
+
+  const relatedUser = request.object.get("user");
+  const relatedEvent = request.object.get("event");
+
+  relatedEvent.fetch().then((fetchedRelatedEvent) => {
+    sendNotification(fetchedRelatedEvent.get("createdBy"), relatedUser, relatedEvent, NotificationType.eventRequest);
+  }, (error) => {
+    // The object was not refreshed successfully.
+    logger.log("Unable to fetch object");
+  });
+});
 
 Parse.Cloud.beforeSave(Parse.User, async (request) => {
 

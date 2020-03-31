@@ -102,10 +102,27 @@ Parse.Cloud.afterSave("Event", (request) => {
   });
 });
 
-Parse.Cloud.afterSave("EventRequest", (request) => {
-
+Parse.Cloud.beforeSave("EventRequest", (request) => {
   const relatedUser = request.object.get("user");
   const relatedEvent = request.object.get("event");
+
+  if (!request.object.isNew()) {
+    request.context = { isEditing: true };
+    if (request.object.get("isAccepted") === true) {
+      sendNotification(relatedUser, null, relatedEvent, NotificationType.eventRequestAccepted)
+    }
+  }
+});
+
+Parse.Cloud.afterSave("EventRequest", (request) => {
+
+  const context = request.context;
+  const relatedUser = request.object.get("user");
+  const relatedEvent = request.object.get("event");
+
+  if (context.isEditing === true) {
+    return
+  }
 
   relatedEvent.fetch().then((fetchedRelatedEvent) => {
     sendNotification(fetchedRelatedEvent.get("createdBy"), relatedUser, relatedEvent, NotificationType.eventRequest);

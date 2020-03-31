@@ -80,6 +80,28 @@ Parse.Cloud.afterSave("Event", (request) => {
   const context = request.context;
 
   if (context.isEditing === true) {
+    const event = request.object;
+    const user = event.get("createdBy");
+
+    const EventRequest = Parse.Object.extend("EventRequest");
+
+    var queryEventRequest = new Parse.Query(EventRequest);
+    queryEventRequest.equalTo("event", event);
+
+    queryEventRequest.find()
+    .then(function(eventRequests) {
+      for (var i = 0; i < eventRequests.length; i++) {
+        let currentUser = eventRequests[i].get("user");
+        if (user.id === currentUser.id) {
+          continue;
+        }
+        sendNotification(currentUser, null, event, NotificationType.eventUpdate);
+      }
+    })
+    .catch(function(error) {
+      logger.error("sending notification Event " + error.code + " : " + error.message);
+    });
+
     return
   }
 

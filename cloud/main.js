@@ -147,7 +147,11 @@ Parse.Cloud.afterSave("EventRequest", (request) => {
   }
 
   relatedEvent.fetch().then((fetchedRelatedEvent) => {
-    sendNotification(fetchedRelatedEvent.get("createdBy"), relatedUser, relatedEvent, NotificationType.eventRequest);
+    var forUser = fetchedRelatedEvent.get("createdBy")
+    if (forUser.id === relatedUser.id) {
+      return
+    }
+    sendNotification(forUser, relatedUser, relatedEvent, NotificationType.eventRequest);
   }, (error) => {
     // The object was not refreshed successfully.
     logger.log("Unable to fetch object");

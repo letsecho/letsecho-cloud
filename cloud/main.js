@@ -56,10 +56,10 @@ Parse.Cloud.beforeSave("Event", (request) => {
 
   var user = request.user;
 
-  if (user == null) {
+  if (user == null && !request.master) {
     throw "You need to be authenticated 😏. What are you doing 🌚?";
   }
-
+  
   if (!request.object.isNew()) {
     request.context = { isEditing: true };
     return

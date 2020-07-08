@@ -17,6 +17,7 @@
 
 const logger = require('parse-server').logger;
 
+
 const NotificationType = Object.freeze({
   eventRequest: { key: "EVENT_REQUEST", message: "EVENT_REQUEST_FORMAT"},
   eventUpdate: { key: "EVENT_UPDATE", message:  "EVENT_UPDATE_FORMAT"},
@@ -59,7 +60,7 @@ Parse.Cloud.beforeSave("Event", (request) => {
   if (user == null && !request.master) {
     throw "You need to be authenticated 😏. What are you doing 🌚?";
   }
-  
+
   if (!request.object.isNew()) {
     request.context = { isEditing: true };
     return
@@ -262,4 +263,12 @@ Parse.Cloud.afterFind("Event", async (request) => {
   }
 
   return fixedObjects;
+});
+
+// Extra functions
+Parse.Cloud.define("recentEvents", async (request) => {
+  const Event = Parse.Object.extend("Event");
+  var queryEvent = new Parse.Query(Event);
+  const results = await queryEvent.find();
+  return results;
 });

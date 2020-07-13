@@ -268,7 +268,13 @@ Parse.Cloud.afterFind("Event", async (request) => {
 // Extra functions
 Parse.Cloud.define("recentEvents", async (request) => {
   const Event = Parse.Object.extend("Event");
-  var queryEvent = new Parse.Query(Event);
+  const queryEvent = new Parse.Query(Event);
+
+  queryEvent.descending("createdAt");
+  
+  queryEvent.include("createdBy");
+  queryEvent.include("place");
+
   const results = await queryEvent.find();
   return results;
 });

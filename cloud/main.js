@@ -17,6 +17,10 @@
 
 const logger = require('parse-server').logger;
 
+const Event = Parse.Object.extend("Event");
+const EventRequest = Parse.Object.extend("EventRequest");
+const Settings = Parse.Object.extend("Settings");
+const Notification = Parse.Object.extend("Notification");
 
 const NotificationType = Object.freeze({
   eventRequest: { key: "EVENT_REQUEST", message: "EVENT_REQUEST_FORMAT"},
@@ -25,8 +29,6 @@ const NotificationType = Object.freeze({
 });
 
 function sendNotification(user, relatedUser, relatedEvent, type){
-
-  const Notification = Parse.Object.extend("Notification");
 
   var notification = new Notification();
   notification.set("forUser", user);
@@ -84,8 +86,6 @@ Parse.Cloud.afterSave("Event", (request) => {
     const event = request.object;
     const user = event.get("createdBy");
 
-    const EventRequest = Parse.Object.extend("EventRequest");
-
     var queryEventRequest = new Parse.Query(EventRequest);
     queryEventRequest.equalTo("event", event);
 
@@ -105,8 +105,6 @@ Parse.Cloud.afterSave("Event", (request) => {
 
     return
   }
-
-  const EventRequest = Parse.Object.extend("EventRequest");
 
   // Create a new instance of that class.
   var eventRequest = new EventRequest();
@@ -167,8 +165,6 @@ Parse.Cloud.beforeSave(Parse.User, async (request) => {
 
   request.context = { isCreatingSettings: true };
 
-  const Settings = Parse.Object.extend("Settings");
-
   var settings = new Settings();
 
   await settings.save()
@@ -198,8 +194,6 @@ Parse.Cloud.afterSave(Parse.User, (request) => {
 // Delete
 
 Parse.Cloud.beforeDelete("Event", (request) => {
-  var EventRequest = Parse.Object.extend("EventRequest");
-
   var event = request.object;
 
   var queryEventRequest = new Parse.Query(EventRequest);
@@ -232,8 +226,6 @@ Parse.Cloud.afterFind("Event", async (request) => {
     return events;
   }
 
-  const EventRequest = Parse.Object.extend("EventRequest");
-
   var fixedObjects = [];
 
   for (var i = 0; i < events.length; i++) {
@@ -248,9 +240,9 @@ Parse.Cloud.afterFind("Event", async (request) => {
   return fixedObjects;
 });
 
-// Extra functions
+// Functions
+
 Parse.Cloud.define("recentEvents", async (request) => {
-  const Event = Parse.Object.extend("Event");
   const queryEvent = new Parse.Query(Event);
 
   queryEvent.descending("createdAt");
@@ -261,7 +253,6 @@ Parse.Cloud.define("recentEvents", async (request) => {
   return results;
 });
 
-
 Parse.Cloud.define("statusRequestForEvent", async (request) => {
 
   var user = request.user;
@@ -271,13 +262,10 @@ Parse.Cloud.define("statusRequestForEvent", async (request) => {
     throw "🐲: You need to be authenticated 😏. What are you doing 🌚?";
   }
 
-  const Event = Parse.Object.extend("Event");
   const queryEvent = new Parse.Query(Event);
   queryEvent.include("place");
 
   const event = await queryEvent.get(eventId, {useMasterKey:true});
-
-  const EventRequest = Parse.Object.extend("EventRequest");
 
   const userRequestsQuery = new Parse.Query(EventRequest);
   userRequestsQuery.equalTo("user", user);

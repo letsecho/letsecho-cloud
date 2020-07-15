@@ -237,25 +237,8 @@ Parse.Cloud.afterFind("Event", async (request) => {
   var fixedObjects = [];
 
   for (var i = 0; i < events.length; i++) {
+
     var event = events[i];
-
-    var userRequests = [];
-    if (user != null) {
-
-      const userRequestsQuery = new Parse.Query(EventRequest);
-      userRequestsQuery.equalTo("user", user);
-      userRequestsQuery.equalTo("event", event);
-      userRequestsQuery.equalTo("isAccepted", true);
-      userRequests = await userRequestsQuery.first();
-
-      if (userRequests != null) {
-        event.set("isAttending", true);
-        fixedObjects.push(event);
-        continue
-      } else {
-        event.set("isAttending", false);
-      }
-    }
 
     event.set("place", null);
 
@@ -271,10 +254,43 @@ Parse.Cloud.define("recentEvents", async (request) => {
   const queryEvent = new Parse.Query(Event);
 
   queryEvent.descending("createdAt");
-  
+
   queryEvent.include("createdBy");
-  queryEvent.include("place");
 
   const results = await queryEvent.find();
   return results;
+});
+
+
+Parse.Cloud.define("statusRequestForEvent", async (request) => {
+
+  var user = request.user;
+  var eventId = request.params.eventObjectId;
+
+  if (user == null && !request.master) {
+    throw "🐲: You need to be authenticated 😏. What are you doing 🌚?";
+  }
+
+  const Event = Parse.Object.extend("Event");
+  const queryEvent = new Parse.Query(Event);
+  queryEvent.include("place");
+
+  const event = await queryEvent.get(eventId, {useMasterKey:true});
+
+  const EventRequest = Parse.Object.extend("EventRequest");
+
+  const userRequestsQuery = new Parse.Query(EventRequest);
+  userRequestsQuery.equalTo("user", user);
+  userRequestsQuery.equalTo("event", event);
+  const userRequests = await userRequestsQuery.first();
+
+  if (userRequests == null) {
+    return undefined;
+  }
+
+  if (userRequests.get("isAccepted") != true) {
+    return userRequests;
+  }
+
+  return event.get("place")
 });

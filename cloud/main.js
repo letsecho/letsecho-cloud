@@ -288,9 +288,10 @@ Parse.Cloud.define("statusRequestForEvent", async (request) => {
     return undefined;
   }
 
-  if (userRequests.get("isAccepted") != true) {
+  const eventPlace = event.get("place")
+  if (userRequests.get("isAccepted") != true || eventPlace == null) {
     return userRequests;
   }
 
-  return event.get("place")
+  return eventPlace
 });

@@ -249,6 +249,15 @@ Parse.Cloud.define("recentEvents", async (request) => {
 
   queryEvent.include("createdBy");
 
+  const yesterday = (function() {
+    this.setDate(this.getDate() - 20);
+    return this
+  })
+  .call(new Date)
+
+  queryEvent.greaterThan("createdAt", yesterday);
+
+
   const results = await queryEvent.find();
   return results;
 });

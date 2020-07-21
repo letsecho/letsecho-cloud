@@ -15,44 +15,10 @@
 
 /* require("./test.js"); */
 
+require("./utils.js")
+require("./functions.js")
+
 const logger = require('parse-server').logger;
-
-const Event = Parse.Object.extend("Event");
-const EventRequest = Parse.Object.extend("EventRequest");
-const Settings = Parse.Object.extend("Settings");
-const Notification = Parse.Object.extend("Notification");
-
-const NotificationType = Object.freeze({
-  eventRequest: { key: "EVENT_REQUEST", message: "EVENT_REQUEST_FORMAT"},
-  eventUpdate: { key: "EVENT_UPDATE", message:  "EVENT_UPDATE_FORMAT"},
-  eventRequestAccepted: { key: "EVENT_REQUEST_ACCEPTED", message:  "EVENT_REQUEST_ACCEPTED_FORMAT"}
-});
-
-function sendNotification(user, relatedUser, relatedEvent, type){
-
-  var notification = new Notification();
-  notification.set("forUser", user);
-  notification.set("relatedUser", relatedUser);
-  notification.set("relatedEvent", relatedEvent);
-  notification.set("type", type.key);
-  notification.set("message", type.message);
-
-  var acl = new Parse.ACL();
-  acl.setReadAccess(user.id, true);
-  acl.setWriteAccess(user.id, true);
-
-  notification.setACL(acl);
-
-  notification.save()
-  .then((eventRequest) => {
-    // Execute any logic that should take place after the object is saved.
-    console.error('New object created with objectId: ' + notification.id);
-  }, (error) => {
-    // Execute any logic that should take place if the save fails.
-    // error is a Parse.Error with an error code and message.
-    console.error('Failed to create new object, with error code: ' + error.message);
-  });
-}
 
 // Save
 Parse.Cloud.beforeSave("Event", (request) => {
@@ -238,57 +204,4 @@ Parse.Cloud.afterFind("Event", async (request) => {
   }
 
   return fixedObjects;
-});
-
-// Functions
-
-Parse.Cloud.define("recentEvents", async (request) => {
-  const queryEvent = new Parse.Query(Event);
-
-  queryEvent.descending("createdAt");
-
-  queryEvent.include("createdBy");
-
-  const yesterday = (function() {
-    this.setDate(this.getDate() - 20);
-    return this
-  })
-  .call(new Date)
-
-  queryEvent.greaterThan("createdAt", yesterday);
-
-
-  const results = await queryEvent.find();
-  return results;
-});
-
-Parse.Cloud.define("statusRequestForEvent", async (request) => {
-
-  var user = request.user;
-  var eventId = request.params.eventObjectId;
-
-  if (user == null && !request.master) {
-    throw "🐲: You need to be authenticated 😏. What are you doing 🌚?";
-  }
-
-  const queryEvent = new Parse.Query(Event);
-  queryEvent.include("place");
-
-  const event = await queryEvent.get(eventId, {useMasterKey:true});
-
-  const userRequestsQuery = new Parse.Query(EventRequest);
-  userRequestsQuery.equalTo("user", user);
-  userRequestsQuery.equalTo("event", event);
-  const userRequests = await userRequestsQuery.first();
-
-  if (userRequests == null) {
-    return undefined;
-  }
-
-  const eventPlace = event.get("place")
-  if (userRequests.get("isAccepted") != true || eventPlace == null) {
-    return userRequests;
-  }
-
-  return eventPlace
 });

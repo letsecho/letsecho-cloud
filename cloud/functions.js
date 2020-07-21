@@ -15,9 +15,6 @@ const Notification = Parse.Object.extend("Notification");
 Parse.Cloud.define("recentEvents", async (request) => {
   const queryEvent = new Parse.Query(Event);
 
-  queryEvent.descending("createdAt");
-  queryEvent.include("createdBy");
-
   var currentLocation = request.params.currentLocation;
   var distanceRadio = request.params.distanceRadio;
   if (currentLocation != null && distanceRadio != null ) {
@@ -26,16 +23,25 @@ Parse.Cloud.define("recentEvents", async (request) => {
     queryEvent.matchesQuery("place", innerQuery);
   }
 
+  var user = request.user;
+  const queryUserEvents = new Parse.Query(Event);
+  if (user != null) {
+    queryUserEvents.equalTo("createdBy", user);
+  }
+
+  var mainQuery = Parse.Query.or(queryEvent, queryUserEvents);
+  mainQuery.descending("createdAt");
+  mainQuery.include("createdBy");
+
   const yesterday = (function() {
     this.setDate(this.getDate() - 20);
     return this
   })
   .call(new Date)
 
-  queryEvent.greaterThan("createdAt", yesterday);
+  mainQuery.greaterThan("createdAt", yesterday);
 
-
-  const results = await queryEvent.find();
+  const results = await mainQuery.find();
   return results;
 });
 

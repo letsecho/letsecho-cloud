@@ -122,7 +122,7 @@ Parse.Cloud.afterSave("Event", (request) => {
   eventRequest.set("event", request.object);
   eventRequest.set("isAccepted", true);
 
-  eventRequest.save()
+  eventRequest.save({}, {useMasterKey:true})
   .then((eventRequest) => {
     // Execute any logic that should take place after the object is saved.
     console.error('New object created with objectId: ' + eventRequest.id);
@@ -134,10 +134,21 @@ Parse.Cloud.afterSave("Event", (request) => {
 });
 
 Parse.Cloud.beforeSave("EventRequest", (request) => {
-  const relatedUser = request.object.get("user");
-  const relatedEvent = request.object.get("event");
 
-  if (!request.object.isNew()) {
+  var user = request.user;
+
+  if (user == null && !request.master) {
+    throw "🐲: You need to be authenticated 😏. What are you doing 🌚?";
+  }
+
+  if (request.object.isNew()) {
+    if (!request.master) {
+      request.object.set("user", user);
+    }
+  } else {
+    const relatedUser = request.object.get("user");
+    const relatedEvent = request.object.get("event");
+
     request.context = { isEditing: true };
     if (request.object.get("isAccepted") === true) {
       sendNotification(relatedUser, null, relatedEvent, NotificationType.eventRequestAccepted)

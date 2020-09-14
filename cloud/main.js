@@ -178,6 +178,34 @@ Parse.Cloud.afterSave("EventRequest", (request) => {
   });
 });
 
+// Block
+Parse.Cloud.beforeSave("Block", (request) => {
+
+  const user = request.user;
+
+  if (user == null && !request.master) {
+    throw "You need to be authenticated 😏. What are you doing 🌚?";
+  }
+
+  request.object.set("blocker", user)
+
+  const blockedUser = request.object.get("blocked");
+
+
+  if (blockedUser == null && !request.master) {
+    throw "No user to block. What are you doing 🌚?";
+  }
+
+  var acl = new Parse.ACL();
+  acl.setPublicReadAccess(false);
+  acl.setWriteAccess(user.id, true);
+  acl.setReadAccess(user.id, true);
+  acl.setReadAccess(blockedUser,true);
+
+  request.object.setACL(acl);
+});
+
+// User
 Parse.Cloud.beforeSave(Parse.User, async (request) => {
 
   if (request.object.get("settings") != null) {

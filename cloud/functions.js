@@ -82,3 +82,35 @@ Parse.Cloud.define("statusRequestForEvent", async (request) => {
 
   return eventPlace
 });
+
+Parse.Cloud.define("yelpPlaces", async (request) => {
+	const YELP_API = process.env.YELP_API;
+
+  const latitude = request.params.latitude;
+  const longitude = request.params.longitude;
+
+  if (user == null && !request.master) {
+    throw "🐲: You need to be authenticated 😏. What are you doing 🌚?";
+  }
+
+  if (latitude == null || longitude == null ) {
+    throw "🐲: Provide latitude and longitude. What are you doing 🌚?";
+  }
+
+  const response = await Parse.Cloud.httpRequest({
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${YELP_API}`
+    },
+    url: `https://api.yelp.com/v3/businesses/search?latitude=${latitude}&longitude=${longitude}`,
+    success: function(httpResponse) {
+      response.success();
+    },
+    error: function(httpResponse) {
+      response.error(httpResponse);
+    }
+  });
+
+  return response.data.businesses
+});

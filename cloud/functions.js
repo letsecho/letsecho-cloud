@@ -88,6 +88,9 @@ Parse.Cloud.define("yelpPlaces", async (request) => {
 
   const latitude = request.params.latitude;
   const longitude = request.params.longitude;
+  const radius = request.params.radius != null ? request.params.radius : 500;
+
+  var user = request.user;
 
   if (user == null && !request.master) {
     throw "🐲: You need to be authenticated 😏. What are you doing 🌚?";
@@ -103,7 +106,7 @@ Parse.Cloud.define("yelpPlaces", async (request) => {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${YELP_API}`
     },
-    url: `https://api.yelp.com/v3/businesses/search?latitude=${latitude}&longitude=${longitude}`,
+    url: `https://api.yelp.com/v3/businesses/search?sort_by=distance&radius=${radius}&latitude=${latitude}&longitude=${longitude}`,
     success: function(httpResponse) {
       response.success();
     },

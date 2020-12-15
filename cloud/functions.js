@@ -72,15 +72,20 @@ Parse.Cloud.define("statusRequestForEvent", async (request) => {
   const userRequests = await userRequestsQuery.first();
 
   if (userRequests == null) {
-    return undefined;
+    return {"status": "notRequested", "request": null, "place": null};
   }
 
-  const eventPlace = event.get("place")
-  if (userRequests.get("isAccepted") != true || eventPlace == null) {
-    return userRequests;
+  var eventPlace = null
+  var currentStatus = "pending"
+
+  if (userRequests.get("isAccepted") == false) {
+    currentStatus = "rejected"
+  } else if (userRequests.get("isAccepted") == true) {
+    currentStatus = "attending"
+    eventPlace = event.get("place")
   }
 
-  return eventPlace
+  return {"status": currentStatus, "request": userRequests, "place": eventPlace}
 });
 
 Parse.Cloud.define("yelpPlaces", async (request) => {

@@ -178,6 +178,23 @@ Parse.Cloud.afterSave("EventRequest", (request) => {
   });
 });
 
+Parse.Cloud.beforeSave("Comment", (request) => {
+
+  var user = request.user;
+
+  if (user == null && !request.master) {
+    throw "You need to be authenticated 😏. What are you doing 🌚?";
+  }
+
+  request.object.set("createdBy", user)
+
+  var acl = new Parse.ACL();
+  acl.setPublicReadAccess(true);
+  acl.setWriteAccess(user.id, true);
+
+  request.object.setACL(acl);
+});
+
 // Block
 Parse.Cloud.beforeSave("Block", (request) => {
 

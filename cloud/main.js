@@ -20,13 +20,15 @@ require("./functions.js")
 const Event = Parse.Object.extend("Event");
 const Place = Parse.Object.extend("Place");
 const EventRequest = Parse.Object.extend("EventRequest");
+const Comment = Parse.Object.extend("Comment");
 const Settings = Parse.Object.extend("Settings");
 const Notification = Parse.Object.extend("Notification");
 
 const NotificationType = Object.freeze({
   eventRequest: { key: "EVENT_REQUEST", message: "EVENT_REQUEST_FORMAT"},
   eventUpdate: { key: "EVENT_UPDATE", message:  "EVENT_UPDATE_FORMAT"},
-  eventRequestAccepted: { key: "EVENT_REQUEST_ACCEPTED", message:  "EVENT_REQUEST_ACCEPTED_FORMAT"}
+  eventRequestAccepted: { key: "EVENT_REQUEST_ACCEPTED", message:  "EVENT_REQUEST_ACCEPTED_FORMAT"},
+  commentCreated: { key: "COMMENT_CREATED", message:  "COMMENT_CREATED"}
 });
 
 const logger = require('parse-server').logger;
@@ -193,6 +195,36 @@ Parse.Cloud.beforeSave("Comment", (request) => {
   acl.setWriteAccess(user.id, true);
 
   request.object.setACL(acl);
+});
+
+Parse.Cloud.afterSave("Comment", (request) => {
+
+  var currentUser = request.user;
+
+  if (currentUser == null && !request.master) {
+    throw "You need to be authenticated 😏. What are you doing 🌚?";
+  }
+
+  const event = request.object.get("event");
+  const user = request.object.get("createdBy");
+
+  var queryEventRequest = new Parse.Query(EventRequest);
+  queryEventRequest.equalTo("event", event);
+
+  queryEventRequest.find()
+  .then(function(eventRequests) {
+    for (var i = 0; i < eventRequests.length; i++) {
+      let currentUser = eventRequests[i].get("user");
+      if (user.id === currentUser.id) {
+        continue;
+      }
+      sendNotification(currentUser, user, event, NotificationType.commentCreated);
+    }
+  })
+  .catch(function(error) {
+    logger.error("sending notification Event " + error.code + " : " + error.message);
+  });
+
 });
 
 // Block

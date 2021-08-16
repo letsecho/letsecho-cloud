@@ -68,6 +68,19 @@ function sendNotification(user, relatedUser, relatedEvent, type){
     console.error('Failed to create new object, with error code: ' + error.message);
   });
 
+  if (type == NotificationType.eventRequestAccepted) {
+    Parse.Push.send({
+      where: pushQuery,
+      useMasterKey: true,
+      data: {
+        "title" : "You are in! 🔥",
+        "alert" : "Welcome to " + relatedEvent.get("name")
+      }
+    }, {
+      useMasterKey: true
+    });
+  }
+
   if (type == NotificationType.eventRequest) {
     Parse.Push.send({
       where: pushQuery,
@@ -178,13 +191,7 @@ Parse.Cloud.beforeSave("EventRequest", (request) => {
       request.object.set("user", user);
     }
   } else {
-    const relatedUser = request.object.get("user");
-    const relatedEvent = request.object.get("event");
-
     request.context = { isEditing: true };
-    if (request.object.get("isAccepted") === true) {
-      sendNotification(relatedUser, null, relatedEvent, NotificationType.eventRequestAccepted)
-    }
   }
 });
 
@@ -193,13 +200,18 @@ Parse.Cloud.afterSave("EventRequest", (request) => {
   const context = request.context;
   const eventRequest = request.object;
 
-  if (context.isEditing === true) {
-    return
-  }
-
   eventRequest.fetchWithInclude(["user","event"]).then((fetchedEventRequest) => {
     const relatedUser = fetchedEventRequest.get("user");
     const relatedEvent = fetchedEventRequest.get("event");
+
+    if (context.isEditing === true) {
+
+      if (eventRequest.get("isAccepted") === true) {
+        sendNotification(relatedUser, null, relatedEvent, NotificationType.eventRequestAccepted)
+      }
+
+      return
+    }
 
     var forUser = relatedEvent.get("createdBy")
     if (forUser.id === relatedUser.id) {
@@ -211,16 +223,6 @@ Parse.Cloud.afterSave("EventRequest", (request) => {
     logger.log("Unable to fetch object");
   });
 
-  relatedEvent.fetch().then((fetchedRelatedEvent) => {
-    var forUser = fetchedRelatedEvent.get("createdBy")
-    if (forUser.id === relatedUser.id) {
-      return
-    }
-    sendNotification(forUser, relatedUser, relatedEvent, NotificationType.eventRequest);
-  }, (error) => {
-    // The object was not refreshed successfully.
-    logger.log("Unable to fetch object");
-  });
 });
 
 Parse.Cloud.beforeSave("Comment", (request) => {

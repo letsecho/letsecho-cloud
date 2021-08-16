@@ -28,7 +28,7 @@ const NotificationType = Object.freeze({
   eventRequest: { key: "EVENT_REQUEST", message: "EVENT_REQUEST_FORMAT"},
   eventUpdate: { key: "EVENT_UPDATE", message:  "EVENT_UPDATE_FORMAT"},
   eventRequestAccepted: { key: "EVENT_REQUEST_ACCEPTED", message:  "EVENT_REQUEST_ACCEPTED_FORMAT"},
-  commentCreated: { key: "COMMENT_CREATED", message:  "COMMENT_CREATED"}
+  commentCreated: { key: "COMMENT_CREATED", message:  "COMMENT_CREATED_FORMAT"}
 });
 
 const logger = require('parse-server').logger;
@@ -68,6 +68,18 @@ function sendNotification(user, relatedUser, relatedEvent, type){
     console.error('Failed to create new object, with error code: ' + error.message);
   });
 
+  if (type == NotificationType.eventRequest) {
+    Parse.Push.send({
+      where: pushQuery,
+      useMasterKey: true,
+      data: {
+        "title" : "Someone wants to join! 🥳",
+        "alert" : "@" + relatedUser.get("username") + " requested to join " + relatedEvent.get("name")
+      }
+    }, {
+      useMasterKey: true
+    });
+  }
 
   if (type == NotificationType.commentCreated) {
     Parse.Push.send({
@@ -179,12 +191,25 @@ Parse.Cloud.beforeSave("EventRequest", (request) => {
 Parse.Cloud.afterSave("EventRequest", (request) => {
 
   const context = request.context;
-  const relatedUser = request.object.get("user");
-  const relatedEvent = request.object.get("event");
+  const eventRequest = request.object;
 
   if (context.isEditing === true) {
     return
   }
+
+  eventRequest.fetchWithInclude(["user","event"]).then((fetchedEventRequest) => {
+    const relatedUser = fetchedEventRequest.get("user");
+    const relatedEvent = fetchedEventRequest.get("event");
+
+    var forUser = relatedEvent.get("createdBy")
+    if (forUser.id === relatedUser.id) {
+      return
+    }
+    sendNotification(forUser, relatedUser, relatedEvent, NotificationType.eventRequest);
+  }, (error) => {
+    // The object was not refreshed successfully.
+    logger.log("Unable to fetch object");
+  });
 
   relatedEvent.fetch().then((fetchedRelatedEvent) => {
     var forUser = fetchedRelatedEvent.get("createdBy")

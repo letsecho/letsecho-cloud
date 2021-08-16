@@ -42,6 +42,9 @@ const logger = require('parse-server').logger;
  */
 function sendNotification(user, relatedUser, relatedEvent, type){
 
+  var pushQuery = new Parse.Query(Parse.Installation);
+  pushQuery.equalTo('user', user);
+
   var notification = new Notification();
   notification.set("forUser", user);
   notification.set("relatedUser", relatedUser);
@@ -64,6 +67,21 @@ function sendNotification(user, relatedUser, relatedEvent, type){
     // error is a Parse.Error with an error code and message.
     console.error('Failed to create new object, with error code: ' + error.message);
   });
+
+
+  if (type == NotificationType.commentCreated) {
+    Parse.Push.send({
+      where: pushQuery,
+      useMasterKey: true,
+      data: {
+        "title" : relatedEvent.get("name"),
+        "alert" : "@" + relatedUser.get("username") + " left a new message"
+      }
+    }, {
+      useMasterKey: true
+    });
+  }
+
 }
 
 // Save
@@ -210,15 +228,27 @@ Parse.Cloud.afterSave("Comment", (request) => {
 
   var queryEventRequest = new Parse.Query(EventRequest);
   queryEventRequest.equalTo("event", event);
+  queryEventRequest.include("event,user");
 
   queryEventRequest.find()
   .then(function(eventRequests) {
+
+    var sender = user;
     for (var i = 0; i < eventRequests.length; i++) {
+      let currentUser = eventRequests[i].get("user");
+      if (user.id === currentUser.id) {
+        sender = currentUser;
+        break;
+      }
+    }
+
+    for (var i = 0; i < eventRequests.length; i++) {
+      let currentEvent = eventRequests[i].get("event");
       let currentUser = eventRequests[i].get("user");
       if (user.id === currentUser.id) {
         continue;
       }
-      sendNotification(currentUser, user, event, NotificationType.commentCreated);
+      sendNotification(currentUser, sender, currentEvent, NotificationType.commentCreated);
     }
   })
   .catch(function(error) {

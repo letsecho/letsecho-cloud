@@ -33,6 +33,22 @@ const NotificationType = Object.freeze({
 
 const logger = require('parse-server').logger;
 
+function sendPushNotification(pushQuery, title, message) {
+  Parse.Push.send({
+    where: pushQuery,
+    useMasterKey: true,
+    data: {
+      "alert": {
+        "title": title,
+        "body": message
+      },
+      "title": title,
+      "alert": message
+    }
+  }, {
+    useMasterKey: true
+  });
+}
 /**
  * Add two numbers together
  * @param  {Parse.User} user The user that will receive the notification
@@ -55,7 +71,7 @@ function sendNotification(user, relatedUser, relatedEvent, type){
   var acl = new Parse.ACL();
   acl.setReadAccess(user.id, true);
   acl.setWriteAccess(user.id, true);
-
+  
   notification.setACL(acl);
 
   notification.save()
@@ -69,42 +85,27 @@ function sendNotification(user, relatedUser, relatedEvent, type){
   });
 
   if (type == NotificationType.eventRequestAccepted) {
-    Parse.Push.send({
-      where: pushQuery,
-      useMasterKey: true,
-      data: {
-        "title" : "You are in! 🔥",
-        "alert" : "Welcome to " + relatedEvent.get("name")
-      }
-    }, {
-      useMasterKey: true
-    });
+    sendPushNotification(
+      pushQuery,
+      "You are in! 🔥",
+      "Welcome to " + relatedEvent.get("name")
+   );
   }
 
   if (type == NotificationType.eventRequest) {
-    Parse.Push.send({
-      where: pushQuery,
-      useMasterKey: true,
-      data: {
-        "title" : "Someone wants to join! 🥳",
-        "alert" : "@" + relatedUser.get("username") + " requested to join " + relatedEvent.get("name")
-      }
-    }, {
-      useMasterKey: true
-    });
+    sendPushNotification(
+      pushQuery,
+      "Someone wants to join! 🥳",
+      "@" + relatedUser.get("username") + " requested to join " + relatedEvent.get("name")
+   );
   }
 
   if (type == NotificationType.commentCreated) {
-    Parse.Push.send({
-      where: pushQuery,
-      useMasterKey: true,
-      data: {
-        "title" : relatedEvent.get("name"),
-        "alert" : "@" + relatedUser.get("username") + " left a new message"
-      }
-    }, {
-      useMasterKey: true
-    });
+    sendPushNotification(
+      pushQuery,
+      relatedEvent.get("name"),
+      "@" + relatedUser.get("username") + " left a new message"
+   );
   }
 
 }
@@ -255,6 +256,7 @@ Parse.Cloud.afterSave("Comment", (request) => {
 
   var queryEventRequest = new Parse.Query(EventRequest);
   queryEventRequest.equalTo("event", event);
+  queryEventRequest.equalTo("isAccepted", true);
   queryEventRequest.include("event,user");
 
   queryEventRequest.find()

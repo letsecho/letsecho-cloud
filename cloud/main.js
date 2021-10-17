@@ -31,6 +31,12 @@ const NotificationType = Object.freeze({
   commentCreated: { key: "COMMENT_CREATED", message:  "COMMENT_CREATED_FORMAT"}
 });
 
+const WhenIsHappeningType = Object.freeze({
+  ended: { key: "ENDED", message: "EVENT_ENDED"},
+  upcoming: { key: "COMING", message:  "EVENT_COMING"},
+  now: { key: "NOW", message:  "EVENT_NOW"}
+});
+
 const logger = require('parse-server').logger;
 
 function sendPushNotification(pushQuery, title, message) {
@@ -110,6 +116,17 @@ function sendNotification(user, relatedUser, relatedEvent, type){
 
 }
 
+function getWhenIsHappeningType(nowDate, eventStartDate, eventEndDate) {
+  if (eventEndDate < nowDate) {
+    return WhenIsHappeningType.ended;
+  } else if (eventStartDate < nowDate && eventEndDate > nowDate) {
+    return WhenIsHappeningType.now;
+  } else {
+    var upcomingType = WhenIsHappeningType.upcoming;
+    upcomingType.localeMessage = "Soon";
+    return upcomingType;
+  }
+}
 // Save
 Parse.Cloud.beforeSave("Event", (request) => {
 
@@ -391,6 +408,8 @@ Parse.Cloud.afterFind("Event", async (request) => {
     return events;
   }
 
+  const nowDate = Date.now();
+
   var fixedObjects = [];
 
   for (var i = 0; i < events.length; i++) {
@@ -398,6 +417,14 @@ Parse.Cloud.afterFind("Event", async (request) => {
     var event = events[i];
 
     event.set("place", null);
+
+    const eventStartDate = event.get("startDate");
+    const eventEndDate = event.get("endDate");
+
+
+    const whenIsHappening = getWhenIsHappeningType(nowDate, eventStartDate, eventEndDate);
+    event.set("whenIsHappening", whenIsHappening.key);
+    event.set("whenIsHappeningLocaleKey", whenIsHappening.localeMessage);
 
     fixedObjects.push(event);
   }

@@ -71,7 +71,7 @@ function sendNotification(user, relatedUser, relatedEvent, type){
   var acl = new Parse.ACL();
   acl.setReadAccess(user.id, true);
   acl.setWriteAccess(user.id, true);
-  
+
   notification.setACL(acl);
 
   notification.save()
@@ -114,6 +114,7 @@ function sendNotification(user, relatedUser, relatedEvent, type){
 Parse.Cloud.beforeSave("Event", (request) => {
 
   var user = request.user;
+  var event = request.object;
 
   if (user == null && !request.master) {
     throw "You need to be authenticated 😏. What are you doing 🌚?";
@@ -124,14 +125,21 @@ Parse.Cloud.beforeSave("Event", (request) => {
     return
   }
 
-  request.object.set("createdBy", user)
-  request.object.set("isAvailable", true)
+  event.set("createdBy", user);
+  event.set("isAvailable", true);
+
+  if (event.get("startDate") == null) {
+    let nowDate = new Date();
+    event.set("startDate", nowDate);
+    let expiryDate = new Date(new Date().setHours(new Date().getHours() + 4));
+    event.set("endDate", expiryDate);
+  }
 
   var acl = new Parse.ACL();
   acl.setPublicReadAccess(true);
   acl.setWriteAccess(user.id, true);
 
-  request.object.setACL(acl);
+  event.setACL(acl);
 });
 
 Parse.Cloud.afterSave("Event", (request) => {

@@ -45,6 +45,8 @@ Parse.Cloud.define("recentEvents", async (request) => {
   var sortedResults = [];
   results.forEach((item) => {
     var element = JSON.parse( JSON.stringify( item ) );
+    element.__type = "Object";
+    element.className = "Event";
     sortedResults.push(element);
   });
 

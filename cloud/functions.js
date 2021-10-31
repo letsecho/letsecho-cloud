@@ -41,8 +41,36 @@ Parse.Cloud.define("recentEvents", async (request) => {
 
   mainQuery.greaterThan("createdAt", yesterday);
 
-  const results = await mainQuery.find();
-  return results;
+  var results = await mainQuery.find();
+  var sortedResults = [];
+  results.forEach((item) => {
+    var element = JSON.parse( JSON.stringify( item ) );
+    sortedResults.push(element);
+  });
+
+  sortedResults.sort(function(a, b) {
+    var aWeight = 0;
+    var bWeight = 0;
+    if (a.whenIsHappening == "NOW") {
+      aWeight = 2;
+    } else if (a.whenIsHappening == "COMING") {
+      aWeight = 1;
+    }
+    if (b.whenIsHappening == "NOW") {
+      bWeight = 2;
+    } else if (b.whenIsHappening == "COMING") {
+      bWeight = 1;
+    }
+
+    if (aWeight < bWeight) {
+      return 1;
+    } else if (aWeight > bWeight) {
+      return -1;
+    }
+    return 0;
+  });
+
+  return sortedResults;
 });
 
 /**

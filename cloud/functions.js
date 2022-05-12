@@ -54,22 +54,35 @@ Parse.Cloud.define("recentEvents", async (request) => {
   });
 
   sortedResults.sort(function(a, b) {
-    var aWeight = 0;
-    var bWeight = 0;
+    var aWeight = 5;
+    var bWeight = 5;
     if (a.whenIsHappening == "NOW") {
-      aWeight = 2;
-    } else if (a.whenIsHappening == "COMING") {
+      aWeight = 0;
+    } else if (a.whenIsHappening == "TODAY") {
       aWeight = 1;
-    }
-    if (b.whenIsHappening == "NOW") {
-      bWeight = 2;
-    } else if (b.whenIsHappening == "COMING") {
-      bWeight = 1;
+    } else if (a.whenIsHappening == "TONIGHT") {
+      aWeight = 2;
+    } else if (a.whenIsHappening == "TOMORROW") {
+      aWeight = 3;
+    } else if (a.whenIsHappening == "COMING") {
+      aWeight = 4;
     }
 
-    if (aWeight < bWeight) {
+    if (b.whenIsHappening == "NOW") {
+      bWeight = 0;
+    } else if (b.whenIsHappening == "TODAY") {
+      bWeight = 1;
+    } else if (b.whenIsHappening == "TONIGHT") {
+      bWeight = 2;
+    } else if (b.whenIsHappening == "TOMORROW") {
+      bWeight = 3;
+    } else if (b.whenIsHappening == "COMING") {
+      bWeight = 4;
+    }
+
+    if (aWeight > bWeight) {
       return 1;
-    } else if (aWeight > bWeight) {
+    } else if (aWeight < bWeight) {
       return -1;
     }
     return 0;

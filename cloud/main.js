@@ -127,6 +127,7 @@ function getWhenIsHappeningType(nowDate, eventStartDate, eventEndDate) {
     return upcomingType;
   }
 }
+
 // Save
 Parse.Cloud.beforeSave("Event", (request) => {
 

@@ -5,6 +5,8 @@ const EventRequest = Parse.Object.extend("EventRequest");
 const Settings = Parse.Object.extend("Settings");
 const Notification = Parse.Object.extend("Notification");
 
+const logger = require('parse-server').logger;
+
 /**
  * Add two numbers together
  * @param  {Number} num1 The first number
@@ -39,9 +41,10 @@ Parse.Cloud.define("recentEvents", async (request) => {
   })
   .call(new Date)
 
-  mainQuery.greaterThan("createdAt", yesterday);
+  mainQuery.greaterThan("startDate", yesterday);
 
   var results = await mainQuery.find();
+
   var sortedResults = [];
   results.forEach((item) => {
     var element = JSON.parse( JSON.stringify( item ) );

@@ -32,9 +32,12 @@ const NotificationType = Object.freeze({
 });
 
 const WhenIsHappeningType = Object.freeze({
-  ended: { key: "ENDED", message: "EVENT_ENDED"},
+  now: { key: "NOW", message:  "EVENT_NOW"},
+  today: { key: "TODAY", message:  "today"},
+  tonight: { key: "TONIGHT", message:  "TONIGHT"},
+  tomorrow: { key: "TOMORROW", message:  "TOMORROW"},
   upcoming: { key: "COMING", message:  "EVENT_COMING"},
-  now: { key: "NOW", message:  "EVENT_NOW"}
+  ended: { key: "ENDED", message: "EVENT_ENDED"}
 });
 
 const logger = require('parse-server').logger;
@@ -122,8 +125,31 @@ function getWhenIsHappeningType(nowDate, eventStartDate, eventEndDate) {
   } else if (eventStartDate < nowDate && eventEndDate > nowDate) {
     return WhenIsHappeningType.now;
   } else {
+
     var upcomingType = WhenIsHappeningType.upcoming;
     upcomingType.localeMessage = "Soon";
+
+    if (
+      nowDate.getFullYear() === eventStartDate.getFullYear() &&
+      nowDate.getMonth() === eventStartDate.getMonth()
+    ) {
+      const isToday = nowDate.getDate() === eventStartDate.getDate();
+      const isTomorrow = (eventStartDate.getDate() - nowDate.getDate()) < 2;
+
+      if (isToday) {
+        if (eventStartDate.getHours() >= 20) {
+          upcomingType = WhenIsHappeningType.tonight;
+          upcomingType.localeMessage = "Tonight";
+        } else {
+          upcomingType = WhenIsHappeningType.today;
+          upcomingType.localeMessage = "Today";
+        }
+      } else if (isTomorrow) {
+        upcomingType = WhenIsHappeningType.tomorrow;
+        upcomingType.localeMessage = "Tomorrow";
+      }
+    }
+
     return upcomingType;
   }
 }
@@ -415,7 +441,7 @@ Parse.Cloud.afterFind("Event", async (request) => {
     return events;
   }
 
-  const nowDate = Date.now();
+  const nowDate = new Date();
 
   var fixedObjects = [];
 

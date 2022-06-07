@@ -32,7 +32,7 @@ Parse.Cloud.define("recentEvents", async (request) => {
   }
 
   var mainQuery = Parse.Query.or(queryEvent, queryUserEvents);
-  mainQuery.descending("createdAt");
+  mainQuery.ascending("startDate");
   mainQuery.include("createdBy");
 
   const yesterday = (function() {

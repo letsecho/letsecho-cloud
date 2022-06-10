@@ -178,8 +178,10 @@ Parse.Cloud.beforeSave("Event", (request) => {
   }
 
   if (event.get("endDate") == null) {
-    let startDate = event.get("startDate");
-    let expiryDate = new Date(new Date().setHours(new Date().getHours() + 3));
+    let startDate = new Date(event.get("startDate").getTime());
+    let expiryDate = new Date(startDate.setHours(startDate.getHours() + 3));
+    logger.error("Start date " + startDate);
+    logger.error("End Date " + expiryDate);
     event.set("endDate", expiryDate);
   }
 

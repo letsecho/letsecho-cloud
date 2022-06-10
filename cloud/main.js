@@ -449,9 +449,12 @@ Parse.Cloud.afterFind("Event", async (request) => {
 
     event.set("place", null);
 
-    const eventStartDate = event.get("startDate");
+    var eventStartDate = event.get("startDate");
     const eventEndDate = event.get("endDate");
 
+    if (eventStartDate == undefined || eventStartDate == null) {
+      eventStartDate = event.get("createdAt");
+    }
 
     const whenIsHappening = getWhenIsHappeningType(nowDate, eventStartDate, eventEndDate);
     event.set("whenIsHappening", whenIsHappening.key);

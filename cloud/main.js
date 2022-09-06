@@ -230,6 +230,7 @@ Parse.Cloud.afterSave("Event", (request) => {
   .then((eventRequest) => {
     // Execute any logic that should take place after the object is saved.
     console.error('New object created with objectId: ' + eventRequest.id);
+
   }, (error) => {
     // Execute any logic that should take place if the save fails.
     // error is a Parse.Error with an error code and message.
@@ -402,8 +403,10 @@ Parse.Cloud.afterSave(Parse.User, (request) => {
     settings.setACL(acl);
 
     settings.save()
-  }
 
+    const params = { user: user.get("username") };
+    Parse.Cloud.run("notifyNewUser", params);
+  }
 });
 
 // Delete

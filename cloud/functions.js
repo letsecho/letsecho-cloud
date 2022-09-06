@@ -5,7 +5,7 @@ const EventRequest = Parse.Object.extend("EventRequest");
 const Settings = Parse.Object.extend("Settings");
 const Notification = Parse.Object.extend("Notification");
 
-const logger = require('parse-server').logger;
+//const logger = require('parse-server').logger;
 
 /**
  * Add two numbers together
@@ -132,6 +132,27 @@ Parse.Cloud.define("statusRequestForEvent", async (request) => {
   }
 
   return {"status": currentStatus, "request": userRequests, "place": eventPlace}
+});
+
+Parse.Cloud.define("notifyNewUser", async (request) => {
+  const response = await Parse.Cloud.httpRequest({
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    url: process.env.SLACK_WEBHOOK,
+    body: {
+      "text" : "We got a new user: @" + request.params.user
+    },
+    success: function(httpResponse) {
+      response.success();
+    },
+    error: function(httpResponse) {
+      response.error(httpResponse);
+    }
+  });
+
+  return response;
 });
 
 Parse.Cloud.define("yelpPlaces", async (request) => {

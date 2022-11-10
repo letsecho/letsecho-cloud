@@ -92,6 +92,96 @@ Parse.Cloud.define("recentEvents", async (request) => {
 });
 
 /**
+ * Gets a list of events nearby a location with a distance filter. Events are sorted by happening Now, Soon and ended.
+ * @param  {Number} distanceRadio The distance radio filter
+ * @param  {Object} currentLocation latitude: Double longitude: Double
+ */
+
+Parse.Cloud.define("eventsAround", async (request) => {
+  const queryEvent = new Parse.Query(Event);
+
+  var currentLocation = request.params.currentLocation;
+  var distanceRadio = request.params.distanceRadio;
+
+  if (currentLocation != undefined && distanceRadio != undefined) {
+    const currentLocationObj = JSON.parse(currentLocation);
+    var point = new Parse.GeoPoint(currentLocationObj.latitude, currentLocationObj.longitude);
+
+    var innerQuery = new Parse.Query(Place);
+    innerQuery.withinKilometers("coordinate", point, distanceRadio);
+
+    queryEvent.matchesQuery("place", innerQuery);
+  }
+
+  var mainQuery = queryEvent;
+
+  var user = request.user;
+  const queryUserEvents = new Parse.Query(Event);
+  if (user != null) {
+    queryUserEvents.equalTo("createdBy", user);
+    mainQuery = Parse.Query.or(queryEvent, queryUserEvents);
+  }
+
+  mainQuery.ascending("startDate");
+  mainQuery.include("createdBy");
+
+  const yesterday = (function() {
+    this.setDate(this.getDate() - 20);
+    return this
+  })
+  .call(new Date)
+
+  mainQuery.greaterThan("startDate", yesterday);
+
+  var results = await mainQuery.find();
+
+  var sortedResults = [];
+  results.forEach((item) => {
+    var element = JSON.parse( JSON.stringify( item ) );
+    element.__type = "Object";
+    element.className = "Event";
+    sortedResults.push(element);
+  });
+
+  sortedResults.sort(function(a, b) {
+    var aWeight = 5;
+    var bWeight = 5;
+    if (a.whenIsHappening == "NOW") {
+      aWeight = 0;
+    } else if (a.whenIsHappening == "TODAY") {
+      aWeight = 1;
+    } else if (a.whenIsHappening == "TONIGHT") {
+      aWeight = 2;
+    } else if (a.whenIsHappening == "TOMORROW") {
+      aWeight = 3;
+    } else if (a.whenIsHappening == "COMING") {
+      aWeight = 4;
+    }
+
+    if (b.whenIsHappening == "NOW") {
+      bWeight = 0;
+    } else if (b.whenIsHappening == "TODAY") {
+      bWeight = 1;
+    } else if (b.whenIsHappening == "TONIGHT") {
+      bWeight = 2;
+    } else if (b.whenIsHappening == "TOMORROW") {
+      bWeight = 3;
+    } else if (b.whenIsHappening == "COMING") {
+      bWeight = 4;
+    }
+
+    if (aWeight > bWeight) {
+      return 1;
+    } else if (aWeight < bWeight) {
+      return -1;
+    }
+    return 0;
+  });
+
+  return sortedResults;
+});
+
+/**
  * Add two numbers together
  * @param  {Number} num1 The first number
  * @param  {Number} num2 The second number

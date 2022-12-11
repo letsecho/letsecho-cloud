@@ -411,6 +411,81 @@ Parse.Cloud.afterSave(Parse.User, (request) => {
 
 // Delete
 
+Parse.Cloud.beforeDelete(Parse.User, async (request) => {
+  const user = request.object;
+
+  const userSettings = user.get("settings");
+  console.log("Deleting Settings for " + user.id);
+
+  await userSettings.destroy({ useMasterKey: true });
+
+  // Event
+  console.log("Deleting Events for " + user.id);
+  var queryEvent = new Parse.Query(Event);
+  queryEvent.equalTo("createdBy", user);
+
+  await queryEvent.find({useMasterKey:true})
+  .then(function(events) {
+    for (var i = 0; i < events.length; i++) {
+      events[i].destroy({ useMasterKey: true })
+    }
+  })
+  .catch(function(error) {
+    console.error("Deleting Events " + error.code + " : " + error.message);
+  });
+
+  // EventRequest
+  console.log("Deleting EventRequests for " + user.id);
+  var queryEventRequest = new Parse.Query(EventRequest);
+  queryEventRequest.equalTo("user", user);
+
+  await queryEventRequest.find({useMasterKey:true})
+  .then(function(eventRequests) {
+    for (var i = 0; i < eventRequests.length; i++) {
+      eventRequests[i].destroy({ useMasterKey: true })
+    }
+  })
+  .catch(function(error) {
+    logger.error("Deleting EventRequests " + error.code + " : " + error.message);
+  });
+
+  // Comment
+  console.log("Deleting Comments for " + user.id);
+  var queryComment = new Parse.Query(Comment);
+  queryComment.equalTo("createdBy", user);
+
+  await queryComment.find({useMasterKey:true})
+  .then(function(comments) {
+    for (var i = 0; i < comments.length; i++) {
+      comments[i].destroy({ useMasterKey: true })
+    }
+  })
+  .catch(function(error) {
+    logger.error("Deleting Comments " + error.code + " : " + error.message);
+  });
+
+  // Notification
+  logger.error("Deleting Notifications for " + user.id);
+  var queryRelatedUserNotification = new Parse.Query(Notification);
+  queryRelatedUserNotification.equalTo("relatedUser", user);
+
+  var queryForUserNotification = new Parse.Query(Notification);
+  queryForUserNotification.equalTo("forUser", user);
+
+  var queryRelatedUserNotification = Parse.Query.or(queryRelatedUserNotification, queryForUserNotification);
+
+  await queryRelatedUserNotification.find({useMasterKey:true})
+  .then(function(notifications) {
+    for (var i = 0; i < notifications.length; i++) {
+      notifications[i].destroy({ useMasterKey: true })
+    }
+  })
+  .catch(function(error) {
+    logger.error("Deleting Notification " + error.code + " : " + error.message);
+  });
+
+});
+
 Parse.Cloud.beforeDelete("Event", (request) => {
   var event = request.object;
 

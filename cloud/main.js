@@ -540,7 +540,12 @@ Parse.Cloud.afterFind("Event", async (request) => {
     event.set("whenIsHappening", whenIsHappening.key);
     event.set("whenIsHappeningLocaleKey", whenIsHappening.localeMessage);
 
-    fixedObjects.push(event);
+    const createdBy = event.get("createdBy");
+    if (createdBy != undefined) {
+      if (createdBy.get("isActive") != false) {
+        fixedObjects.push(event);
+      }
+    }
   }
 
   return fixedObjects;

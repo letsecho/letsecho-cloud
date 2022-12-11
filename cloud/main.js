@@ -550,3 +550,17 @@ Parse.Cloud.afterFind("Event", async (request) => {
 
   return fixedObjects;
 });
+
+Parse.Cloud.afterFind(Parse.User, async (request) => {
+  var users = request.objects;
+  for (var i = 0; i < users.length; i++) {
+    var user = users[i];
+    if (user.get("isActive") == false) {
+      user.set("username", "notavailable");
+      user.set("name", "user not available");
+      user.set("bio", undefined);
+      user.set("picture", undefined);
+    }
+  }
+  return users;
+});

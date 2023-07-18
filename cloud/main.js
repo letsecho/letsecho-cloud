@@ -204,9 +204,9 @@ Parse.Cloud.beforeSave("Event", (request) => {
 Parse.Cloud.afterSave("Event", async (request) => {
 
   const context = request.context;
+  const event = request.object;
 
   if (context.isEditing === true) {
-    const event = request.object;
     const user = event.get("createdBy");
 
     var queryEventRequest = new Parse.Query(EventRequest);
@@ -230,7 +230,6 @@ Parse.Cloud.afterSave("Event", async (request) => {
   }
 
   try {
-    // Create a new instance of that class.
     var eventRequest = new EventRequest();
     eventRequest.set("user", request.user);
     eventRequest.set("event", request.object);
@@ -241,7 +240,35 @@ Parse.Cloud.afterSave("Event", async (request) => {
     logger.log('New object created with objectId: ' + savedEventRequest.id);
 
   } catch (error) {
-    console.error('Failed to create new object, with error code: ' + error.message);
+    console.error('Failed to create new object, with error code: 🤠' + error.message);
+  }
+
+  try {
+    const eventPlace = event.get("place");
+    if (!eventPlace.isDataAvailable()) {
+      await eventPlace.fetch();
+    }
+
+    const distance = 16;
+    const sorted = false;
+    const placeCoordinate = eventPlace.get("coordinate");
+
+    const userQuery = new Parse.Query(Parse.User);
+
+    const innerQuery = new Parse.Query(Settings);
+    innerQuery.equalTo("notificationsNearbyGatherings", true);
+    innerQuery.withinKilometers("currentLocation", placeCoordinate, distance, sorted);
+
+    userQuery.matchesQuery("settings", innerQuery);
+
+    const fetchedUser = await userQuery.find({ useMasterKey: true });
+    for (var i = 0; i < fetchedUser.length; i++) {
+      let currentUser = fetchedUser[i];
+      sendNotification(currentUser, null, event, NotificationType.eventCreated);
+    }
+
+  } catch (error) {
+    console.error('Failed to create new object, with error code: 🤷‍♂️' + error.message);
   }
 });
 

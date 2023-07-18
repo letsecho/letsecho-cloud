@@ -25,6 +25,7 @@ const Settings = Parse.Object.extend("Settings");
 const Notification = Parse.Object.extend("Notification");
 
 const NotificationType = Object.freeze({
+  eventCreated: { key: "EVENT_CREATED", message:  "EVENT_CREATED_FORMAT"},
   eventRequest: { key: "EVENT_REQUEST", message: "EVENT_REQUEST_FORMAT"},
   eventUpdate: { key: "EVENT_UPDATE", message:  "EVENT_UPDATE_FORMAT"},
   eventRequestAccepted: { key: "EVENT_REQUEST_ACCEPTED", message:  "EVENT_REQUEST_ACCEPTED_FORMAT"},

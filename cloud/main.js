@@ -94,6 +94,14 @@ function sendNotification(user, relatedUser, relatedEvent, type){
     console.error('Failed to create new object, with error code: ' + error.message);
   });
 
+  if (type == NotificationType.eventCreated) {
+    sendPushNotification(
+      pushQuery,
+      "Event nearby 🌊",
+      "Join: " + relatedEvent.get("name") 
+   );
+  }
+  
   if (type == NotificationType.eventRequestAccepted) {
     sendPushNotification(
       pushQuery,
@@ -193,7 +201,7 @@ Parse.Cloud.beforeSave("Event", (request) => {
   event.setACL(acl);
 });
 
-Parse.Cloud.afterSave("Event", (request) => {
+Parse.Cloud.afterSave("Event", async (request) => {
 
   const context = request.context;
 
@@ -205,38 +213,36 @@ Parse.Cloud.afterSave("Event", (request) => {
     queryEventRequest.equalTo("event", event);
 
     queryEventRequest.find()
-    .then(function(eventRequests) {
-      for (var i = 0; i < eventRequests.length; i++) {
-        let currentUser = eventRequests[i].get("user");
-        if (user.id === currentUser.id) {
-          continue;
+      .then(function (eventRequests) {
+        for (var i = 0; i < eventRequests.length; i++) {
+          let currentUser = eventRequests[i].get("user");
+          if (user.id === currentUser.id) {
+            continue;
+          }
+          sendNotification(currentUser, null, event, NotificationType.eventUpdate);
         }
-        sendNotification(currentUser, null, event, NotificationType.eventUpdate);
-      }
-    })
-    .catch(function(error) {
-      logger.error("sending notification Event " + error.code + " : " + error.message);
-    });
+      })
+      .catch(function (error) {
+        logger.error("sending notification Event " + error.code + " : " + error.message);
+      });
 
     return
   }
 
-  // Create a new instance of that class.
-  var eventRequest = new EventRequest();
-  eventRequest.set("user", request.user);
-  eventRequest.set("event", request.object);
-  eventRequest.set("isAccepted", true);
+  try {
+    // Create a new instance of that class.
+    var eventRequest = new EventRequest();
+    eventRequest.set("user", request.user);
+    eventRequest.set("event", request.object);
+    eventRequest.set("isAccepted", true);
 
-  eventRequest.save({}, {useMasterKey:true})
-  .then((eventRequest) => {
-    // Execute any logic that should take place after the object is saved.
-    console.error('New object created with objectId: ' + eventRequest.id);
+    const savedEventRequest = await eventRequest.save({}, { useMasterKey: true });
 
-  }, (error) => {
-    // Execute any logic that should take place if the save fails.
-    // error is a Parse.Error with an error code and message.
+    logger.log('New object created with objectId: ' + savedEventRequest.id);
+
+  } catch (error) {
     console.error('Failed to create new object, with error code: ' + error.message);
-  });
+  }
 });
 
 Parse.Cloud.beforeSave("EventRequest", (request) => {

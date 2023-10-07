@@ -43,7 +43,7 @@ const WhenIsHappeningType = Object.freeze({
 
 const logger = require('parse-server').logger;
 
-function sendPushNotification(pushQuery, title, message) {
+function sendPushNotification(pushQuery, title, message, type) {
   Parse.Push.send({
     where: pushQuery,
     useMasterKey: true,
@@ -66,7 +66,7 @@ function sendPushNotification(pushQuery, title, message) {
  * @param  {Event} relatedEvent The event related to the notification
  * @param  {NotificationType} type The type of notification
  */
-function sendNotification(user, relatedUser, relatedEvent, type){
+function sendNotification(user, relatedUser, relatedEvent, type) {
 
   var pushQuery = new Parse.Query(Parse.Installation);
   pushQuery.equalTo('user', user);
@@ -98,7 +98,8 @@ function sendNotification(user, relatedUser, relatedEvent, type){
     sendPushNotification(
       pushQuery,
       "Event nearby 🌊",
-      "Join: " + relatedEvent.get("name") 
+      "Join: " + relatedEvent.get("name"),
+      type
    );
   }
   
@@ -106,7 +107,8 @@ function sendNotification(user, relatedUser, relatedEvent, type){
     sendPushNotification(
       pushQuery,
       "You are in! 🔥",
-      "Welcome to " + relatedEvent.get("name")
+      "Welcome to " + relatedEvent.get("name"),
+      type
    );
   }
 
@@ -114,7 +116,8 @@ function sendNotification(user, relatedUser, relatedEvent, type){
     sendPushNotification(
       pushQuery,
       "Someone wants to join! 🥳",
-      "@" + relatedUser.get("username") + " requested to join " + relatedEvent.get("name")
+      "@" + relatedUser.get("username") + " requested to join " + relatedEvent.get("name"),
+      type
    );
   }
 
@@ -122,7 +125,8 @@ function sendNotification(user, relatedUser, relatedEvent, type){
     sendPushNotification(
       pushQuery,
       relatedEvent.get("name"),
-      "@" + relatedUser.get("username") + " left a new message"
+      "@" + relatedUser.get("username") + " left a new message",
+      type
    );
   }
 
@@ -520,7 +524,7 @@ Parse.Cloud.beforeDelete(Parse.User, async (request) => {
 
 });
 
-Parse.Cloud.beforeDelete("Event", (request) => {
+Parse.Cloud.beforeDelete("Event", async (request) => {
   var event = request.object;
 
   var queryEventRequest = new Parse.Query(EventRequest);
@@ -535,6 +539,16 @@ Parse.Cloud.beforeDelete("Event", (request) => {
   .catch(function(error) {
     logger.error("beforeDelete Event " + error.code + " : " + error.message);
   });
+
+  var notificationRequest = new Parse.Query(Notification);
+  notificationRequest.equalTo("relatedEvent", event);
+
+  const notifications = await notificationRequest.find({useMasterKey:true});
+
+  for (var i = 0; i < notifications.length; i++) {
+    notifications[i].destroy({useMasterKey:true});
+  }
+
 });
 
 // Find

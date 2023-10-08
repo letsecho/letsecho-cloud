@@ -122,11 +122,11 @@ Parse.Cloud.define("eventsAround", async (request) => {
     mainQuery = Parse.Query.or(queryEvent, queryUserEvents);
   }
 
-  mainQuery.ascending("startDate");
+  mainQuery.descending("endDate");
   mainQuery.include("createdBy");
 
   const yesterday = (function() {
-    this.setDate(this.getDate() - 20);
+    this.setDate(this.getDate() - 180);
     return this
   })
   .call(new Date)
@@ -175,7 +175,7 @@ Parse.Cloud.define("eventsAround", async (request) => {
     } else if (aWeight < bWeight) {
       return -1;
     }
-    return 0;
+    return a.endDate > b.endDate;
   });
 
   return sortedResults;

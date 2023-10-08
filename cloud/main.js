@@ -32,6 +32,13 @@ const NotificationType = Object.freeze({
   commentCreated: { key: "COMMENT_CREATED", message: "COMMENT_CREATED_FORMAT" }
 });
 
+const EventRequestStatusType = Object.freeze({
+  accepted: "ACCEPTED",
+  rejected: "REJECTED",
+  pending: "PENDING",
+  notSent: "NOT_SENT"
+});
+
 const WhenIsHappeningType = Object.freeze({
   now: { key: "NOW", message: "EVENT_NOW" },
   today: { key: "TODAY", message: "today" },
@@ -574,14 +581,11 @@ Parse.Cloud.afterFind("Event", async (request) => {
     return events;
   }
 
-  var eventsIdsRequests = [];
+  var eventRequests = [];
   if (user != null) {
     var queryEventRequest = new Parse.Query(EventRequest);
     queryEventRequest.equalTo("user", user);
-    queryEventRequest.equalTo("isAccepted", true);
-    const eventRequests = await queryEventRequest.find({ useMasterKey: true });
-
-    eventsIdsRequests = eventRequests.map((eventRequest) => eventRequest.get("event").id);
+    eventRequests = await queryEventRequest.find({ useMasterKey: true });
   } 
   
   const nowDate = new Date();
@@ -592,11 +596,27 @@ Parse.Cloud.afterFind("Event", async (request) => {
 
     var event = events[i];
 
-    if (eventsIdsRequests.includes(event.id)) {
-      event.set("isAccepted", true);
-    } else {
+    var foundEventRequest = null;
+    for (var requestIndex = 0; requestIndex < eventRequests.length; requestIndex++) {
+      var eventRequest = eventRequests[requestIndex];
+      if (eventRequest.get("event").id == event.id) {
+        foundEventRequest = eventRequest;
+      }
+    }
+    
+    if (foundEventRequest == null) {
       event.set("place", null);
-      event.set("isAccepted", false);
+      event.set("requestStatus", EventRequestStatusType.notSent);
+    } else {
+      if (foundEventRequest.get("isAccepted") == true) {
+        event.set("requestStatus", EventRequestStatusType.accepted);
+      } else if (foundEventRequest.get("isAccepted") == false) {
+        event.set("place", null);
+        event.set("requestStatus", EventRequestStatusType.rejected);
+      } else {
+        event.set("place", null);
+        event.set("requestStatus", EventRequestStatusType.pending);
+      }
     }
 
     var eventStartDate = event.get("startDate");

@@ -123,8 +123,8 @@ Parse.Cloud.define("eventsAround", async (request) => {
   }
 
   mainQuery.descending("endDate");
-  mainQuery.include("createdBy");
-
+  mainQuery.include("createdBy,place");
+    
   const yesterday = (function() {
     this.setDate(this.getDate() - 180);
     return this
@@ -133,7 +133,7 @@ Parse.Cloud.define("eventsAround", async (request) => {
 
   mainQuery.greaterThan("startDate", yesterday);
 
-  var results = await mainQuery.find();
+  var results = await mainQuery.find({ sessionToken: user.getSessionToken() });
 
   var sortedResults = [];
   results.forEach((item) => {

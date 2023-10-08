@@ -25,20 +25,20 @@ const Settings = Parse.Object.extend("Settings");
 const Notification = Parse.Object.extend("Notification");
 
 const NotificationType = Object.freeze({
-  eventCreated: { key: "EVENT_CREATED", message:  "EVENT_CREATED_FORMAT"},
-  eventRequest: { key: "EVENT_REQUEST", message: "EVENT_REQUEST_FORMAT"},
-  eventUpdate: { key: "EVENT_UPDATE", message:  "EVENT_UPDATE_FORMAT"},
-  eventRequestAccepted: { key: "EVENT_REQUEST_ACCEPTED", message:  "EVENT_REQUEST_ACCEPTED_FORMAT"},
-  commentCreated: { key: "COMMENT_CREATED", message:  "COMMENT_CREATED_FORMAT"}
+  eventCreated: { key: "EVENT_CREATED", message: "EVENT_CREATED_FORMAT" },
+  eventRequest: { key: "EVENT_REQUEST", message: "EVENT_REQUEST_FORMAT" },
+  eventUpdate: { key: "EVENT_UPDATE", message: "EVENT_UPDATE_FORMAT" },
+  eventRequestAccepted: { key: "EVENT_REQUEST_ACCEPTED", message: "EVENT_REQUEST_ACCEPTED_FORMAT" },
+  commentCreated: { key: "COMMENT_CREATED", message: "COMMENT_CREATED_FORMAT" }
 });
 
 const WhenIsHappeningType = Object.freeze({
-  now: { key: "NOW", message:  "EVENT_NOW"},
-  today: { key: "TODAY", message:  "today"},
-  tonight: { key: "TONIGHT", message:  "TONIGHT"},
-  tomorrow: { key: "TOMORROW", message:  "TOMORROW"},
-  upcoming: { key: "COMING", message:  "EVENT_COMING"},
-  ended: { key: "ENDED", message: "EVENT_ENDED"}
+  now: { key: "NOW", message: "EVENT_NOW" },
+  today: { key: "TODAY", message: "today" },
+  tonight: { key: "TONIGHT", message: "TONIGHT" },
+  tomorrow: { key: "TOMORROW", message: "TOMORROW" },
+  upcoming: { key: "COMING", message: "EVENT_COMING" },
+  ended: { key: "ENDED", message: "EVENT_ENDED" }
 });
 
 const logger = require('parse-server').logger;
@@ -85,14 +85,14 @@ function sendNotification(user, relatedUser, relatedEvent, type) {
   notification.setACL(acl);
 
   notification.save()
-  .then((eventRequest) => {
-    // Execute any logic that should take place after the object is saved.
-    console.log('New object created with objectId: ' + notification.id);
-  }, (error) => {
-    // Execute any logic that should take place if the save fails.
-    // error is a Parse.Error with an error code and message.
-    console.error('Failed to create new object, with error code: ' + error.message);
-  });
+    .then((eventRequest) => {
+      // Execute any logic that should take place after the object is saved.
+      console.log('New object created with objectId: ' + notification.id);
+    }, (error) => {
+      // Execute any logic that should take place if the save fails.
+      // error is a Parse.Error with an error code and message.
+      console.error('Failed to create new object, with error code: ' + error.message);
+    });
 
   if (type == NotificationType.eventCreated) {
     sendPushNotification(
@@ -100,16 +100,16 @@ function sendNotification(user, relatedUser, relatedEvent, type) {
       "Event nearby 🌊",
       "Join: " + relatedEvent.get("name"),
       type
-   );
+    );
   }
-  
+
   if (type == NotificationType.eventRequestAccepted) {
     sendPushNotification(
       pushQuery,
       "You are in! 🔥",
       "Welcome to " + relatedEvent.get("name"),
       type
-   );
+    );
   }
 
   if (type == NotificationType.eventRequest) {
@@ -118,7 +118,7 @@ function sendNotification(user, relatedUser, relatedEvent, type) {
       "Someone wants to join! 🥳",
       "@" + relatedUser.get("username") + " requested to join " + relatedEvent.get("name"),
       type
-   );
+    );
   }
 
   if (type == NotificationType.commentCreated) {
@@ -127,7 +127,7 @@ function sendNotification(user, relatedUser, relatedEvent, type) {
       relatedEvent.get("name"),
       "@" + relatedUser.get("username") + " left a new message",
       type
-   );
+    );
   }
 
 }
@@ -298,7 +298,7 @@ Parse.Cloud.afterSave("EventRequest", (request) => {
   const context = request.context;
   const eventRequest = request.object;
 
-  eventRequest.fetchWithInclude(["user","event"]).then((fetchedEventRequest) => {
+  eventRequest.fetchWithInclude(["user", "event"]).then((fetchedEventRequest) => {
     const relatedUser = fetchedEventRequest.get("user");
     const relatedEvent = fetchedEventRequest.get("event");
 
@@ -357,29 +357,29 @@ Parse.Cloud.afterSave("Comment", (request) => {
   queryEventRequest.include("event,user");
 
   queryEventRequest.find()
-  .then(function(eventRequests) {
+    .then(function (eventRequests) {
 
-    var sender = user;
-    for (var i = 0; i < eventRequests.length; i++) {
-      let currentUser = eventRequests[i].get("user");
-      if (user.id === currentUser.id) {
-        sender = currentUser;
-        break;
+      var sender = user;
+      for (var i = 0; i < eventRequests.length; i++) {
+        let currentUser = eventRequests[i].get("user");
+        if (user.id === currentUser.id) {
+          sender = currentUser;
+          break;
+        }
       }
-    }
 
-    for (var i = 0; i < eventRequests.length; i++) {
-      let currentEvent = eventRequests[i].get("event");
-      let currentUser = eventRequests[i].get("user");
-      if (user.id === currentUser.id) {
-        continue;
+      for (var i = 0; i < eventRequests.length; i++) {
+        let currentEvent = eventRequests[i].get("event");
+        let currentUser = eventRequests[i].get("user");
+        if (user.id === currentUser.id) {
+          continue;
+        }
+        sendNotification(currentUser, sender, currentEvent, NotificationType.commentCreated);
       }
-      sendNotification(currentUser, sender, currentEvent, NotificationType.commentCreated);
-    }
-  })
-  .catch(function(error) {
-    logger.error("sending notification Event " + error.code + " : " + error.message);
-  });
+    })
+    .catch(function (error) {
+      logger.error("sending notification Event " + error.code + " : " + error.message);
+    });
 
 });
 
@@ -405,7 +405,7 @@ Parse.Cloud.beforeSave("Block", (request) => {
   acl.setPublicReadAccess(false);
   acl.setWriteAccess(user.id, true);
   acl.setReadAccess(user.id, true);
-  acl.setReadAccess(blockedUser,true);
+  acl.setReadAccess(blockedUser, true);
 
   request.object.setACL(acl);
 });
@@ -435,7 +435,7 @@ Parse.Cloud.afterSave(Parse.User, (request) => {
     var settings = request.object.get("settings")
 
     var acl = new Parse.ACL();
-    acl.setReadAccess(user.id,true);
+    acl.setReadAccess(user.id, true);
     acl.setWriteAccess(user.id, true);
 
     settings.setACL(acl);
@@ -462,45 +462,45 @@ Parse.Cloud.beforeDelete(Parse.User, async (request) => {
   var queryEvent = new Parse.Query(Event);
   queryEvent.equalTo("createdBy", user);
 
-  await queryEvent.find({useMasterKey:true})
-  .then(function(events) {
-    for (var i = 0; i < events.length; i++) {
-      events[i].destroy({ useMasterKey: true })
-    }
-  })
-  .catch(function(error) {
-    console.error("Deleting Events " + error.code + " : " + error.message);
-  });
+  await queryEvent.find({ useMasterKey: true })
+    .then(function (events) {
+      for (var i = 0; i < events.length; i++) {
+        events[i].destroy({ useMasterKey: true })
+      }
+    })
+    .catch(function (error) {
+      console.error("Deleting Events " + error.code + " : " + error.message);
+    });
 
   // EventRequest
   console.log("Deleting EventRequests for " + user.id);
   var queryEventRequest = new Parse.Query(EventRequest);
   queryEventRequest.equalTo("user", user);
 
-  await queryEventRequest.find({useMasterKey:true})
-  .then(function(eventRequests) {
-    for (var i = 0; i < eventRequests.length; i++) {
-      eventRequests[i].destroy({ useMasterKey: true })
-    }
-  })
-  .catch(function(error) {
-    logger.error("Deleting EventRequests " + error.code + " : " + error.message);
-  });
+  await queryEventRequest.find({ useMasterKey: true })
+    .then(function (eventRequests) {
+      for (var i = 0; i < eventRequests.length; i++) {
+        eventRequests[i].destroy({ useMasterKey: true })
+      }
+    })
+    .catch(function (error) {
+      logger.error("Deleting EventRequests " + error.code + " : " + error.message);
+    });
 
   // Comment
   console.log("Deleting Comments for " + user.id);
   var queryComment = new Parse.Query(Comment);
   queryComment.equalTo("createdBy", user);
 
-  await queryComment.find({useMasterKey:true})
-  .then(function(comments) {
-    for (var i = 0; i < comments.length; i++) {
-      comments[i].destroy({ useMasterKey: true })
-    }
-  })
-  .catch(function(error) {
-    logger.error("Deleting Comments " + error.code + " : " + error.message);
-  });
+  await queryComment.find({ useMasterKey: true })
+    .then(function (comments) {
+      for (var i = 0; i < comments.length; i++) {
+        comments[i].destroy({ useMasterKey: true })
+      }
+    })
+    .catch(function (error) {
+      logger.error("Deleting Comments " + error.code + " : " + error.message);
+    });
 
   // Notification
   logger.error("Deleting Notifications for " + user.id);
@@ -512,15 +512,15 @@ Parse.Cloud.beforeDelete(Parse.User, async (request) => {
 
   var queryRelatedUserNotification = Parse.Query.or(queryRelatedUserNotification, queryForUserNotification);
 
-  await queryRelatedUserNotification.find({useMasterKey:true})
-  .then(function(notifications) {
-    for (var i = 0; i < notifications.length; i++) {
-      notifications[i].destroy({ useMasterKey: true })
-    }
-  })
-  .catch(function(error) {
-    logger.error("Deleting Notification " + error.code + " : " + error.message);
-  });
+  await queryRelatedUserNotification.find({ useMasterKey: true })
+    .then(function (notifications) {
+      for (var i = 0; i < notifications.length; i++) {
+        notifications[i].destroy({ useMasterKey: true })
+      }
+    })
+    .catch(function (error) {
+      logger.error("Deleting Notification " + error.code + " : " + error.message);
+    });
 
 });
 
@@ -531,22 +531,22 @@ Parse.Cloud.beforeDelete("Event", async (request) => {
   queryEventRequest.equalTo("event", event);
 
   queryEventRequest.find()
-  .then(function(eventRequests) {
-    for (var i = 0; i < eventRequests.length; i++) {
-      eventRequests[i].destroy()
-    }
-  })
-  .catch(function(error) {
-    logger.error("beforeDelete Event " + error.code + " : " + error.message);
-  });
+    .then(function (eventRequests) {
+      for (var i = 0; i < eventRequests.length; i++) {
+        eventRequests[i].destroy()
+      }
+    })
+    .catch(function (error) {
+      logger.error("beforeDelete Event " + error.code + " : " + error.message);
+    });
 
   var notificationRequest = new Parse.Query(Notification);
   notificationRequest.equalTo("relatedEvent", event);
 
-  const notifications = await notificationRequest.find({useMasterKey:true});
+  const notifications = await notificationRequest.find({ useMasterKey: true });
 
   for (var i = 0; i < notifications.length; i++) {
-    notifications[i].destroy({useMasterKey:true});
+    notifications[i].destroy({ useMasterKey: true });
   }
 
 });
@@ -554,12 +554,19 @@ Parse.Cloud.beforeDelete("Event", async (request) => {
 // Find
 
 Parse.Cloud.beforeFind("Event", async (request) => {
+  if (request.isMaster) return;
+  
   let query = request.query;
-  query.include("createdBy");
+  let user = request.context.user;
+  if (user != null) {
+    query.include("createdBy,place");
+  } else {
+    query.include("createdBy");
+  }
 });
 
 Parse.Cloud.afterFind("Event", async (request) => {
-
+  
   var events = request.objects;
   var user = request.user;
 
@@ -567,6 +574,16 @@ Parse.Cloud.afterFind("Event", async (request) => {
     return events;
   }
 
+  var eventsIdsRequests = [];
+  if (user != null) {
+    var queryEventRequest = new Parse.Query(EventRequest);
+    queryEventRequest.equalTo("user", user);
+    queryEventRequest.equalTo("isAccepted", true);
+    const eventRequests = await queryEventRequest.find({ useMasterKey: true });
+
+    eventsIdsRequests = eventRequests.map((eventRequest) => eventRequest.get("event").id);
+  } 
+  
   const nowDate = new Date();
 
   var fixedObjects = [];
@@ -575,7 +592,12 @@ Parse.Cloud.afterFind("Event", async (request) => {
 
     var event = events[i];
 
-    event.set("place", null);
+    if (eventsIdsRequests.includes(event.id)) {
+      event.set("isAccepted", true);
+    } else {
+      event.set("place", null);
+      event.set("isAccepted", false);
+    }
 
     var eventStartDate = event.get("startDate");
     const eventEndDate = event.get("endDate");

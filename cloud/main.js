@@ -327,8 +327,23 @@ Parse.Cloud.afterSave("EventRequest", (request) => {
     // The object was not refreshed successfully.
     logger.log("Unable to fetch object");
   });
-
 });
+
+Parse.Cloud.beforeDelete("EventRequest", async (request) => {
+  var eventRequest = request.object;
+  var user = request.user;
+
+  var notificationRequest = new Parse.Query(Notification);
+  notificationRequest.equalTo("relatedEvent", eventRequest.get("event"));
+  notificationRequest.equalTo("relatedUser", user);
+
+  const notifcations = await notificationRequest.find({ useMasterKey: true });
+  for (var i = 0; i < notifcations.length; i++) {
+    notifcations[i].destroy({ useMasterKey: true });
+  }
+});
+
+// Block
 
 Parse.Cloud.beforeSave("Comment", (request) => {
 
@@ -346,6 +361,7 @@ Parse.Cloud.beforeSave("Comment", (request) => {
 
   request.object.setACL(acl);
 });
+
 
 Parse.Cloud.afterSave("Comment", (request) => {
 
@@ -402,7 +418,6 @@ Parse.Cloud.beforeSave("Block", (request) => {
   request.object.set("blocker", user)
 
   const blockedUser = request.object.get("blocked");
-
 
   if (blockedUser == null && !request.master) {
     throw "No user to block. What are you doing 🌚?";

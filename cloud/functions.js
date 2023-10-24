@@ -132,9 +132,13 @@ Parse.Cloud.define("eventsAround", async (request) => {
   .call(new Date)
 
   mainQuery.greaterThan("startDate", yesterday);
-
-  var results = await mainQuery.find({ sessionToken: user.getSessionToken() });
-
+  
+  var results;
+  if (user == null) {
+    results = await mainQuery.find();
+  } else {
+    results = await mainQuery.find({ sessionToken: user.getSessionToken() });
+  }
   var sortedResults = [];
   results.forEach((item) => {
     var element = JSON.parse( JSON.stringify( item ) );

@@ -619,7 +619,9 @@ Parse.Cloud.afterFind("Event", async (request) => {
       }
     }
     
-    if (foundEventRequest == null) {
+    if (user == null) {
+      event.set("place", null);
+    } else if (foundEventRequest == null) {
       event.set("place", null);
       event.set("requestStatus", EventRequestStatusType.notSent);
     } else {

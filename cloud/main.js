@@ -181,7 +181,7 @@ Parse.Cloud.beforeSave("Event", (request) => {
   var event = request.object;
 
   if (user == null && !request.master) {
-    throw "You need to be authenticated 😏. What are you doing 🌚?";
+    throw "Event: You need to be authenticated 😏. What are you doing 🌚?";
   }
 
   if (!request.object.isNew()) {
@@ -579,9 +579,10 @@ Parse.Cloud.beforeFind("Event", async (request) => {
   if (request.isMaster) return;
   
   let query = request.query;
-  let user = request.context.user;
+  var user = request.user;
+  
   if (user != null) {
-    query.include("createdBy,place");
+    query.include("createdBy,place,region");
   } else {
     query.include("createdBy");
   }
@@ -601,7 +602,7 @@ Parse.Cloud.afterFind("Event", async (request) => {
     var queryEventRequest = new Parse.Query(EventRequest);
     queryEventRequest.equalTo("user", user);
     eventRequests = await queryEventRequest.find({ useMasterKey: true });
-  } 
+  }
   
   const nowDate = new Date();
 

@@ -29,7 +29,7 @@ Parse.Cloud.define("eventsFromRegion", async (request) => {
   queryEvent.equalTo("region", region);
 
   queryEvent.descending("endDate");
-  queryEvent.include("createdBy,place");
+  queryEvent.include("createdBy,place,region");
     
   const yesterday = (function() {
     this.setDate(this.getDate() - 180);
@@ -366,4 +366,50 @@ Parse.Cloud.define("yelpPlaces", async (request) => {
   });
 
   return response.data.businesses
+});
+
+Parse.Cloud.job("updateRegions", async (request) => {
+
+  if (!request.master) {
+    throw "🦊🦊";
+  }
+
+  const queryEvent = new Parse.Query(Event);
+  queryEvent.limit(1000);
+
+  let region = new Region();
+  region.id = "DkdHBLUW2o";
+
+  var results = await queryEvent.find({useMasterKey:true});
+
+  for (let i = 0; i < results.length; i++) {
+    const event = results[i];
+    event.set("region", region);
+    await event.save({}, {useMasterKey:true});
+  }
+  return "updated";
+
+});
+
+Parse.Cloud.job("updateUsers", async (request) => {
+
+  if (!request.master) {
+    throw "🦊🦊";
+  }
+  
+  const query = new Parse.Query(Parse.User);
+  query.limit(1000);
+
+  let region = new Region();
+  region.id = "DkdHBLUW2o";
+
+  var results = await query.find({useMasterKey:true});
+
+  for (let i = 0; i < results.length; i++) {
+    const user = results[i];
+    user.set("region", region);
+    await user.save({}, {useMasterKey:true});
+  }
+  return "updated";
+
 });

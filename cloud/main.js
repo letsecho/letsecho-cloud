@@ -255,20 +255,13 @@ Parse.Cloud.afterSave("Event", async (request) => {
   }
 
   try {
-    const eventPlace = event.get("place");
-    if (!eventPlace.isDataAvailable()) {
-      await eventPlace.fetch();
-    }
-
-    const distance = 16;
-    const sorted = false;
-    const placeCoordinate = eventPlace.get("coordinate");
+    const eventRegion = event.get("region");
 
     const userQuery = new Parse.Query(Parse.User);
 
     const innerQuery = new Parse.Query(Settings);
     innerQuery.equalTo("notificationsNearbyGatherings", true);
-    innerQuery.withinKilometers("currentLocation", placeCoordinate, distance, sorted);
+    innerQuery.equalTo("region", eventRegion);
 
     userQuery.matchesQuery("settings", innerQuery);
 

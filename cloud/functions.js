@@ -368,17 +368,24 @@ Parse.Cloud.define("yelpPlaces", async (request) => {
   return response.data.businesses
 });
 
-Parse.Cloud.job("updateRegions", async (request) => {
+Parse.Cloud.job("updateEvents", async (request) => {
 
-  if (!request.master) {
-    throw "🦊🦊";
+  let region = new Region();
+
+  try {
+    const config = await Parse.Config.get({useMasterKey: true})
+    let defaultRegion = config.get("default_region");
+    region.id =  defaultRegion.objectId;
+  } catch (error) {
+    throw "to get Configs with error code: 🤠" + error.message;
+  }
+
+  if (region.id == undefined) {
+    throw "Unable to get region id: 🤠";
   }
 
   const queryEvent = new Parse.Query(Event);
   queryEvent.limit(1000);
-
-  let region = new Region();
-  region.id = "DkdHBLUW2o";
 
   var results = await queryEvent.find({useMasterKey:true});
 
@@ -391,25 +398,35 @@ Parse.Cloud.job("updateRegions", async (request) => {
 
 });
 
-Parse.Cloud.job("updateUsers", async (request) => {
-
-  if (!request.master) {
-    throw "🦊🦊";
-  }
-  
-  const query = new Parse.Query(Parse.User);
-  query.limit(1000);
+Parse.Cloud.job("updateUsersSettings", async (request) => {
 
   let region = new Region();
-  region.id = "DkdHBLUW2o";
 
+  try {
+    const config = await Parse.Config.get({useMasterKey: true})
+    let defaultRegion = config.get("default_region");
+    region.id =  defaultRegion.objectId;
+  } catch (error) {
+    throw "to get Configs with error code: 🤠" + error.message;
+  }
+
+  if (region.id == undefined) {
+    throw "Unable to get region id: 🤠";
+  }
+
+  const query = new Parse.Query(Settings);
+  query.limit(1000);  
+  
   var results = await query.find({useMasterKey:true});
 
   for (let i = 0; i < results.length; i++) {
-    const user = results[i];
-    user.set("region", region);
-    await user.save({}, {useMasterKey:true});
+    var settings = results[i];
+    if (settings.get("region") == undefined || settings.get("region") == null) {
+      settings.set("region", region);
+      await settings.save({}, {useMasterKey:true});
+    }
   }
+
   return "updated";
 
 });
